@@ -1,0 +1,53 @@
+<html>
+  <head>
+    <title>Transfer Funds</title>
+  </head>
+  <body>
+    <h1>Transfer Money</h1>
+    <form action="/transfer" method="post" onsubmit="transfer(event)">
+      <label>Receiver: <input type="text" name="receiver" /></label><br />
+      <label>Amount: <input type="number" name="amount" step="0.01" /></label
+      ><br />
+      <input type="submit" value="Transfer" />
+    </form>
+    <a href="#" onclick="account(event)">Back to account</a>
+    <p id="exit" style="display: none;color: red;">Login required!</p>
+  </body>
+  <script>
+    function account(event){
+        event.preventDefault()
+        url_s = document.URL.split('/')
+        window.location.href = '/account/' + url_s[url_s.length - 1]
+    }
+    function exit(){
+        document.getElementById('exit').style.display = 'block'
+        localStorage.removeItem('token')
+        setTimeout(_ => window.location.href = '/', 2000)
+    }
+    async function transfer(event) {
+      event.preventDefault();
+      const form = event.target;
+      const formData = new FormData(form);
+      token = localStorage.getItem('token')
+      if(!token){
+        exit()
+      }
+      const token_response = await fetch("/retrive_user/" + token);
+      if(!token_response.ok){
+        exit()
+      }
+      const data_token = await token_response.json();
+      formData.append('sender', data_token.username)  
+      const response = await fetch("/transfer", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert(data.message)
+      } else {
+        alert(data.detail);
+      }
+    }
+  </script>
+</html>

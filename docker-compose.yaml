@@ -1,0 +1,6 @@
+services:
+  unit-test-fastapi:
+    build: .
+    volumes:
+      - ./fastapi_webserver:/app/fastapi_webserver
+      - ./tests:/app/tests
