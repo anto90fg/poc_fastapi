@@ -96,7 +96,7 @@ The application includes automatic tests with **pytest**.
 Tests are run using a Docker image.
 
 ### **Testing**
-``sh
+```sh
 docker compose up
 ```
 
