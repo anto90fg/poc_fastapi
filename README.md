@@ -92,11 +92,11 @@ curl -X POST "http://127.0.0.1:8000/analyze" \
 ```
 
 ## **Testing**
-L'applicazione include test automatici con **pytest**.
-I test vengono eseguiti usando un immagine Docker.
+The application includes automatic tests with **pytest**.
+Tests are run using a Docker image.
 
-### **Eseguire i test**
-```sh
+### **Testing**
+``sh
 docker compose up
 ```
 
