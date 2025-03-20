@@ -1,0 +1,78 @@
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script>
+        async function retrive_user() {
+            token = localStorage.getItem("token");
+            const response = await fetch("/retrive_user/", {
+                headers: {
+                Authorization: "Bearer " + token,
+                },
+            });
+            const data = await response.json();
+            if (response.ok) {
+                document.getElementById("username").textContent = data.username;
+            } else {
+                exit();
+            }
+        }
+        function exit() {
+            document.getElementById("exit").style.display = "block";
+            localStorage.removeItem("token");
+            setTimeout((_) => (window.location.href = "/"), 2000);
+        }
+        async function fetchSummary() {
+            const token = localStorage.getItem("token"); // Assuming token is stored after login
+            if (!token) {
+                alert("You need to log in first!");
+                exit()
+            }    
+            const response = await fetch("/analyze", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch data");
+            }
+
+            const data = await response.json();
+            
+
+            const summaryTable = document.getElementById("summaryTable");
+            summaryTable.innerHTML = "<tr><th>Feature</th><th>Timestamp</th><th>Reciver</th><th>Amount</th><th>Balance</th></tr>";
+
+            data.summary.forEach(row => {
+                let tr = document.createElement("tr")
+                acc = ''
+                for (let key in row) {
+                    if(key != 'sender'){
+                        acc+= `<td>${row[key]}</td>`;
+                    }
+                }
+                tr.innerHTML = acc
+                summaryTable.appendChild(tr);
+            });
+            document.getElementById("summ").style.display = 'block'
+        }
+        retrive_user()
+    </script>
+</head>
+<body>
+    <h1>Welcome, <span id="username"></span>!</h1>
+    <button onclick="fetchSummary()">Analyze</button>
+    <div id="summ" style="display: none;">
+    <h2>Data Summary</h2>
+    <table border="1" id="summaryTable">
+        <tr><th>Feature</th><th>Value</th></tr>
+    </table>
+    </div>
+    <p id="exit" style="display: none; color: red">Login required!</p>
+</body>
+</html>

@@ -1,5 +1,7 @@
-from unittest.mock import patch
-from fastapi_webserver.entrypoint import users_db  # Assicurati che il nome del file sia corretto
+from unittest.mock import MagicMock, patch
+from pyspark.sql import DataFrame
+from fastapi_webserver.entrypoint import create_token
+import pandas as pd
 
 def test_login_success(mock_client):
     response = mock_client.post("/token", data={"username": "test_user", "password": "pass"})
@@ -19,14 +21,14 @@ def test_login_page(mock_client):
     assert response.status_code == 200
 
 def test_retrieve_user_success(mock_client):
-    access_token = users_db["test_user"]["access_token"]
-    response = mock_client.get(f"/retrive_user/{access_token}")
+    token = create_token('test_user')
+    response = mock_client.get(f"/retrive_user", headers={"Authorization": f"Bearer {token}"})
     assert response.status_code == 200
     assert response.json()["username"] == "test_user"
 
 def test_retrieve_user_failure(mock_client):
-    response = mock_client.get("/retrive_user/invalidtoken")
-    assert response.status_code == 404
+    response = mock_client.get("/retrive_user", headers={"Authorization": f"Bearer fake_token"})
+    assert response.status_code == 401
 
 def test_account_details_success(mock_client):
     response = mock_client.get("/account/test_user")
@@ -38,27 +40,72 @@ def test_account_details_failure(mock_client):
 
 @patch("fastapi_webserver.entrypoint.write_notification")
 def test_transfer_success(mock_write_notification, mock_client):
-    response = mock_client.post("/transfer", data={
-        "sender": "test_user", "receiver": "user1", "amount": 50.0
-    })
+    token = create_token("test_user")
+    response = mock_client.post(
+        "/transfer",
+        data={"receiver": 'test_user_2', "amount": 50},
+        headers={"Authorization": f"Bearer {token}"}
+    )    
     assert response.status_code == 200
-    assert response.json()["message"] == "Successfully transferred $50.0 from test_user to user1"
+    assert response.json()["message"] == "Successfully transferred $50.0 from test_user to test_user_2"
     mock_write_notification.assert_called_once()
 
 def test_transfer_insufficient_funds(mock_client):
-    response = mock_client.post("/transfer", data={
-        "sender": "test_user", "receiver": "user2", "amount": 1000.0
-    })
+    token = create_token("test_user")
+    response = mock_client.post(
+        "/transfer", 
+        data={"receiver": "test_user_2", "amount": 1000.0},
+        headers={"Authorization": f"Bearer {token}"}
+    )
     assert response.status_code == 400
 
 def test_transfer_invalid_receiver(mock_client):
-    response = mock_client.post("/transfer", data={
-        "sender": "test_user", "receiver": "unknown", "amount": 50.0
-    })
+    token = create_token("test_user")
+    response = mock_client.post(
+        "/transfer", 
+        data={"receiver": "unknown", "amount": 50.0},
+        headers={"Authorization": f"Bearer {token}"}
+    )
     assert response.status_code == 404
 
 def test_transfer_same_user(mock_client):
-    response = mock_client.post("/transfer", data={
-        "sender": "test_user", "receiver": "test_user", "amount": 50.0
-    })
+    token = create_token("test_user")
+    response = mock_client.post(
+        "/transfer", 
+        data={"receiver": "test_user", "amount": 50.0},
+        headers={"Authorization": f"Bearer {token}"}
+    )
     assert response.status_code == 400
+
+
+def test_analyze_today_success(mock_client):
+    sender = "test_user"
+    token = create_token(sender)
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    with patch("fastapi_webserver.entrypoint.spark") as mock_spark:
+        df: DataFrame = MagicMock(spec=DataFrame)
+        mock_spark.read.option.return_value.option.return_value.csv.return_value = df
+        df.filter.return_value.describe.return_value.toPandas.return_value = pd.DataFrame({"summary": [{"metric": "count", "value": "5"}]})
+        response = mock_client.post("/analyze", headers=headers)
+        assert response.status_code == 200
+        assert response.json()["username"] == sender
+        assert "summary" in response.json()
+
+def test_analyze_today_no_file(mock_client):
+    sender = "test_user"
+    token = create_token(sender)
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    with patch("fastapi_webserver.entrypoint.spark") as mock_spark:
+        mock_spark.read.option.return_value.option.return_value.csv.side_effect = Exception("File not found")
+        response = mock_client.post("/analyze", headers=headers)
+        
+        assert response.status_code == 200
+        assert "details" in response.json()
+        assert response.json()["details"] == 'File not found'
+
+def test_analyze_today_unauthorized(mock_client):
+    response = mock_client.post("/analyze")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"

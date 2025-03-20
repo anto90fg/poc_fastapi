@@ -1,43 +1,95 @@
-# FastAPI Banking API
+# FastAPI PySpark Banking API
 
-Questa applicazione FastAPI simula un sistema bancario con autenticazione, gestione degli account e trasferimenti di fondi tra utenti.
+## Overview
+This project is a FastAPI-based banking API that integrates with PySpark for data analysis. It includes authentication, user account management, balance transfers, and transaction analysis.
 
-## **Installazione**
+## Features
+- **User Authentication**: OAuth2-based login system with JWT token generation.
+- **Account Management**: Retrieve user account details.
+- **Balance Transfers**: Transfer funds securely between accounts.
+- **Transaction Analysis**: Analyze user transaction history using PySpark.
+- **HTML Pages**: Serve login, home, transfer, and analysis pages.
 
-Questa applicazione utilizza **Poetry** per la gestione delle dipendenze. Assicurati di avere Poetry installato prima di procedere.
+## Technologies Used
+- **FastAPI**: Web framework for building APIs.
+- **PySpark**: Distributed data processing.
+- **JWT**: Token-based authentication.
+- **Pydantic**: Data validation.
+- **Background Tasks**: Asynchronous logging of transactions.
 
-### **1. Clona il repository**
+## Installation
+### Prerequisites
+- Python 3.8+
+- pip
+- poetry
+
+### Setup
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/your-repo/fastapi-pyspark-banking.git
+   cd fastapi-pyspark-banking
+   ```
+2. Install dependencies:
+   ```sh
+   poetry install
+   ```
+3. Start the FastAPI server:
+   ```sh
+   poetry run uvicorn fastapi_webserver.entrypoint:app --host 127.0.0.1 --port 8000 --reload
+   ```
+
+## API Endpoints
+### Authentication
+- **POST `/token`**: Login to get an access token.
+
+### User Management
+- **GET `/retrive_user/`**: Retrieve authenticated user details.
+- **GET `/account/{username}`**: Get user account balance.
+
+### Transactions
+- **POST `/transfer`**: Transfer funds between users.
+- **POST `/analyze`**: Analyze transactions using PySpark.
+
+### HTML Pages
+- **GET `/`**: Home page.
+- **GET `/login`**: Login page.
+- **GET `/transfer`**: Transfer funds page.
+- **GET `/analyze`**: Transaction analysis page.
+
+## Usage
+### 1. Authenticate and Get Token
+Use the following `curl` command to log in:
 ```sh
-git clone <rpoetryepository_url>
-cd <repository_name>
+curl -X POST "http://127.0.0.1:8000/token" \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -d "username=test_user&password=pass"
+```
+Response:
+```json
+{
+  "access_token": "your_jwt_token",
+  "token_type": "bearer"
+}
 ```
 
-### **2. Installa le dipendenze**
+### 2. Retrieve Account Details
 ```sh
-poetry install
+curl -X GET "http://127.0.0.1:8000/account/test_user" \
+     -H "Authorization: Bearer your_jwt_token"
 ```
 
-### **3. Avvia l'applicazione**
+### 3. Transfer Funds
 ```sh
-poetry run uvicorn fastapi_webserver.entrypoint:app --host 127.0.0.1 --port 8000 --reload
+curl -X POST "http://127.0.0.1:8000/transfer" \
+     -H "Authorization: Bearer your_jwt_token" \
+     -d "receiver=user1&amount=50"
 ```
-L'API sarà disponibile su `http://127.0.0.1:8000`.
 
----
-
-## **Endpoints principali**
-
-### **Autenticazione**
-- **POST /token** → Ottiene un token di accesso con username e password
-
-### **Gestione utenti**
-- **GET /retrive_user/{access_token}** → Recupera username associato a un token
-- **GET /account/{username}** → Mostra i dettagli dell'account di un utente
-
-### **Transazioni**
-- **POST /transfer** → Trasferisce fondi tra utenti
-
----
+### 4. Analyze Transactions
+```sh
+curl -X POST "http://127.0.0.1:8000/analyze" \
+     -H "Authorization: Bearer your_jwt_token"
+```
 
 ## **Testing**
 L'applicazione include test automatici con **pytest**.
@@ -48,7 +100,9 @@ I test vengono eseguiti usando un immagine Docker.
 docker compose up
 ```
 
----
 
-## **Autore**
-Sviluppato da Antonio Cervelione.
+## License
+This project is licensed under the MIT License.
+
+## Author
+Antonio Cervelione - [GitHub](https://github.com/anto90fg)

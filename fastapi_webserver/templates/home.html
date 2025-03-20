@@ -7,33 +7,39 @@
   </head>
   <body>
     <h1>Welcome to FastAPI Bank</h1>
-    <p id='info' style="display:none;"></p>
+    <p id="info" style="display: none"></p>
     <a id="login" href="/login">Login</a>
   </body>
   <script>
-    async function getToken() {
-      token = localStorage.getItem("token");
-      if (token) {
-        log = document.getElementById('login')
-        log.style.display = 'none'
-        par = document.getElementById('info')
-        par.innerHTML = 'Already logged in. Checking access token.'
-        par.style.display = 'block'
-        const response = await fetch("/retrive_user/" + token);
-        const data = await response.json();
-        setTimeout(_ => {
-            if (response.ok) {
-                window.location.href = "/account/" + data.username;
-            } else {
-                alert("Invalid token");
-                localStorage.removeItem('token')
-                log.style.display = 'block'
-                par.innerHTML = 'Access token invalid. Login needed!'
-            }
-        }, 2000)
-        
+      async function getToken() {
+        token = localStorage.getItem("token");
+        if (token) {
+          log = document.getElementById('login')
+          log.style.display = 'none'
+          par = document.getElementById('info')
+          par.innerHTML = 'Already logged in. Checking access token.'
+          par.style.display = 'block'
+          const response = await fetch(
+            "/retrive_user/",
+            {
+              headers: {
+                "Authorization": "Bearer "+token,
+              }
+          });
+          const data = await response.json();
+          setTimeout(_ => {
+              if (response.ok) {
+                  window.location.href = "/account/" + data.username;
+              } else {
+                  alert("Invalid token");
+                  localStorage.removeItem('token')
+                  log.style.display = 'block'
+                  par.innerHTML = 'Access token invalid. Login needed!'
+              }
+          }, 2000)
+
+        }
       }
-    }
-    getToken();
+      getToken();
   </script>
 </html>

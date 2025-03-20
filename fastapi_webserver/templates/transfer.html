@@ -11,42 +11,59 @@
       <input type="submit" value="Transfer" />
     </form>
     <a href="#" onclick="account(event)">Back to account</a>
-    <p id="exit" style="display: none;color: red;">Login required!</p>
+    <p id="exit" style="display: none; color: red">Login required!</p>
   </body>
   <script>
-    function account(event){
-        event.preventDefault()
-        url_s = document.URL.split('/')
-        window.location.href = '/account/' + url_s[url_s.length - 1]
+    async function retrive_user() {
+      token = localStorage.getItem("token");
+      const response = await fetch("/retrive_user/", {
+        headers: {
+          Authorization: "Bearer " + token,
+        },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        return data.username;
+      } else {
+        return null;
+      }
     }
-    function exit(){
-        document.getElementById('exit').style.display = 'block'
-        localStorage.removeItem('token')
-        setTimeout(_ => window.location.href = '/', 2000)
+
+    async function account(event) {
+      event.preventDefault();
+      user = await retrive_user();
+      if (user) {
+        window.location.href = "/account/" + user;
+      } else {
+        exit();
+      }
+    }
+    function exit() {
+      document.getElementById("exit").style.display = "block";
+      localStorage.removeItem("token");
+      setTimeout((_) => (window.location.href = "/"), 2000);
     }
     async function transfer(event) {
       event.preventDefault();
       const form = event.target;
       const formData = new FormData(form);
-      token = localStorage.getItem('token')
-      if(!token){
-        exit()
+      token = localStorage.getItem("token");
+      if (!token) {
+        exit();
       }
-      const token_response = await fetch("/retrive_user/" + token);
-      if(!token_response.ok){
-        exit()
-      }
-      const data_token = await token_response.json();
-      formData.append('sender', data_token.username)  
       const response = await fetch("/transfer", {
         method: "POST",
         body: formData,
+        headers: {
+          Authorization: "Bearer " + token,
+        },
       });
       const data = await response.json();
       if (response.ok) {
-        alert(data.message)
+        alert(data.message);
       } else {
         alert(data.detail);
+        exit();
       }
     }
   </script>
